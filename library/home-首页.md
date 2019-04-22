@@ -2,7 +2,7 @@
 
 <br>
 
-![欢迎使用amWiki！](amWiki/images/logo.png "欢迎使用amWiki！")  
+![logo](amWiki/images/logo.png)  
 
 ### 欢迎来到 gongxiaohai的个人wiki !
 —— **如果你不能有效利用业余时间，那么你永远都不会达到你的目标！**  
