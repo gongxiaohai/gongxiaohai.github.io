@@ -38,11 +38,13 @@ binlog是有两种模式，statement格式的话是记录SQL语句，row语句�
 - redo log是InnoDB引擎特有的；binlog是MySQL的server层实现的，所有引擎都可以使用。
 - redo log是物理日志，记录的是“在某个数据页上做了什么修改”；binlog是逻辑日志，记录的是这个语句的原始逻辑，比如“给ID=2这一行的字段c字段上加1”。
 - redo log是循环写的，空间固定会用完；binlog是可以追加写入的。“追加写”是指binlog文件写到一定大小后会切换到下一个，并不会覆盖以前的日志。
+
 有了对着两个日志的概念性理解，我们再来看执行器和InnoDB引擎在执行这个简单的update语句时的内部流程。
 ```mysql
 mysql> create table T(ID int primary key, c int);
 mysql> update T set c=c+1 where ID = 2;
 ```
+
 1. 执行器先找到引擎取 ID=2 这一行。ID是主键，引擎直接用树搜索找到这一行。如果ID=2这一行所在的数据页本来就在内存中，就直接返回给执行器；否则，需要先从磁盘读入内存，然后在返回。
 2. 执行器拿到引擎给的这行数据，把这个值加上1，比如原来是N，现在就是N+1，得到新的一行数据，在调用引擎接口写入这行新数据。
 3. 引擎将这行新数据更新到内存中，同时将这个更新操作记录到redo log里面，此时redo log处于prepare状态。然后告知执行器执行完成了，随时可以提交事务。
@@ -50,6 +52,7 @@ mysql> update T set c=c+1 where ID = 2;
 5. 执行器调用引擎的提交事务接口，引擎把刚刚写入的redo log改成提交(commit)状态，更新完成。
 这里给出update语句的执行流程图，浅色是在InnoDB内部执行的，深色是在Server层执行的。
 ![update语句执行流程图](https://static001.geekbang.org/resource/image/2e/be/2e5bff4910ec189fe1ee6e2ecc7b4bbe.png)
+
 最后三步看上去有点“绕”，将redo log的写入拆成了两个步骤：prepare和commit，这就是“两阶段提交”。
 
 ### 两阶段提交
